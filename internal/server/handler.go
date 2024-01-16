@@ -10,15 +10,15 @@ import (
 )
 
 type Handler struct {
-	service EnrichService
+	service EnricherService
 	log     *logrus.Entry
 }
 
-type EnrichService interface {
-	Enrich(ctx context.Context, personName models.RequestEnrich) (models.ResponseEnrich, error)
+type EnricherService interface {
+	Handle(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error)
 }
 
-func NewHandler(service EnrichService, log *logrus.Logger) *Handler {
+func NewHandler(service EnricherService, log *logrus.Logger) *Handler {
 	return &Handler{
 		service: service,
 		log:     log.WithField("module", "handler"),
@@ -26,25 +26,27 @@ func NewHandler(service EnrichService, log *logrus.Logger) *Handler {
 }
 
 func (h *Handler) enrich(w http.ResponseWriter, r *http.Request) {
-	var personName models.RequestEnrich
+	var userName models.RequestEnrich
 
-	err := json.NewDecoder(r.Body).Decode(&personName)
+	err := json.NewDecoder(r.Body).Decode(&userName)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	enrichedPersonName, err := h.service.Enrich(r.Context(), personName)
+	userNameEnriched, err := h.service.Handle(r.Context(), userName)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
+
+		h.log.Infof("err: %s", err)
 
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(enrichedPersonName)
+	err = json.NewEncoder(w).Encode(userNameEnriched)
 	if err != nil {
 		h.log.Warningf("json.NewEncoder.Encode: %s", err)
 	}

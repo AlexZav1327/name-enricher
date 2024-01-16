@@ -1,5 +1,5 @@
 build:
-	go build -o ./bin/service ./cmd/service/main.go
+	go build -o ./bin/enricher-service ./cmd/enricher-service/main.go
 
 fmt:
 	gofumpt -w .
@@ -11,4 +11,10 @@ lint: build fmt tidy
 	golangci-lint run ./...
 
 run:
-	go run ./cmd/service/main.go
+	go run ./cmd/enricher-service/main.go
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down

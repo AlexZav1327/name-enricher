@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package service
 
 import (
@@ -6,78 +7,107 @@ import (
 
 	"github.com/AlexZav1327/name-enricher/internal/models"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 type Service struct {
-	er  Enricher
-	log *logrus.Entry
+	pg              store
+	ageResolver     AgeResolver
+	genderResolver  GenderResolver
+	countryResolver CountryResolver
+	log             *logrus.Entry
 }
 
-type Enricher interface {
-	EnrichAge(ctx context.Context, name string) (int, error)
-	EnrichGender(ctx context.Context, name string) (string, error)
-	EnrichCountry(ctx context.Context, name string) (string, error)
-}
-
-func New(er Enricher, log *logrus.Logger) *Service {
+func New(pg store, age AgeResolver, gender GenderResolver, country CountryResolver, log *logrus.Logger) *Service {
 	return &Service{
-		er:  er,
-		log: log.WithField("module", "service"),
+		pg:              pg,
+		ageResolver:     age,
+		genderResolver:  gender,
+		countryResolver: country,
+		log:             log.WithField("module", "service"),
 	}
 }
 
-func (s *Service) Enrich(ctx context.Context, personName models.RequestEnrich) (models.ResponseEnrich, error) {
-	var responseEnrich models.ResponseEnrich
-
-	responseEnrich.Name = personName.Name
-	responseEnrich.Surname = personName.Surname
-	responseEnrich.Patronymic = personName.Patronymic
-
-	age, err := s.GetAge(ctx, personName.Name)
-	if err != nil {
-		return models.ResponseEnrich{}, fmt.Errorf("GetAge: %w", err)
-	}
-
-	gender, err := s.GetGender(ctx, personName.Name)
-	if err != nil {
-		return models.ResponseEnrich{}, fmt.Errorf("GetGender: %w", err)
-	}
-
-	country, err := s.GetCountry(ctx, personName.Name)
-	if err != nil {
-		return models.ResponseEnrich{}, fmt.Errorf("GetCountry: %w", err)
-	}
-
-	responseEnrich.Age = age
-	responseEnrich.Gender = gender
-	responseEnrich.Country = country
-
-	return responseEnrich, nil
+type store interface {
+	GetUser(ctx context.Context, userName string) (models.ResponseEnrich, error)
+	SaveUser(ctx context.Context, user models.ResponseEnrich) error
 }
 
-func (s *Service) GetAge(ctx context.Context, name string) (int, error) {
-	age, err := s.er.EnrichAge(ctx, name)
-	if err != nil {
-		return 0, fmt.Errorf("EnrichAge: %w", err)
-	}
-
-	return age, nil
+type AgeResolver interface {
+	GetAge(ctx context.Context, name string) (int, error)
 }
 
-func (s *Service) GetGender(ctx context.Context, name string) (string, error) {
-	gender, err := s.er.EnrichGender(ctx, name)
-	if err != nil {
-		return "", fmt.Errorf("EnrichGender: %w", err)
-	}
-
-	return gender, nil
+type GenderResolver interface {
+	GetGender(ctx context.Context, name string) (string, error)
 }
 
-func (s *Service) GetCountry(ctx context.Context, name string) (string, error) {
-	country, err := s.er.EnrichCountry(ctx, name)
-	if err != nil {
-		return "", fmt.Errorf("EnrichCountry: %w", err)
+type CountryResolver interface {
+	GetCountry(ctx context.Context, name string) (string, error)
+}
+
+func (s *Service) Handle(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
+	userNameEnriched, err := s.getUser(ctx, userName)
+	if err == nil {
+		return userNameEnriched, nil
 	}
 
-	return country, nil
+	userNameEnriched = models.ResponseEnrich{
+		RequestEnrich: userName,
+	}
+
+	eg, egCtx := errgroup.WithContext(context.Background())
+
+	eg.Go(func() error {
+		age, err := s.ageResolver.GetAge(egCtx, userName.Name)
+		if err != nil {
+			return err
+		}
+
+		userNameEnriched.Age = age
+
+		return nil
+	})
+
+	eg.Go(func() error {
+		gender, err := s.genderResolver.GetGender(egCtx, userName.Name)
+		if err != nil {
+			return err
+		}
+
+		userNameEnriched.Gender = gender
+
+		return nil
+	})
+
+	eg.Go(func() error {
+		country, err := s.countryResolver.GetCountry(egCtx, userName.Name)
+		if err != nil {
+			return err
+		}
+
+		userNameEnriched.Country = country
+
+		return nil
+	})
+
+	err = eg.Wait()
+	if err != nil {
+		return models.ResponseEnrich{}, fmt.Errorf("eg.Wait: %w", err)
+	}
+
+	err = s.pg.SaveUser(ctx, userNameEnriched)
+	if err != nil {
+		return userNameEnriched, fmt.Errorf("pg.SaveUser: %w", err)
+	}
+
+	return userNameEnriched, nil
+}
+
+func (s *Service) getUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
+	userNameEnriched, err := s.pg.GetUser(ctx, userName.Name)
+	if err != nil {
+		return models.ResponseEnrich{}, fmt.Errorf("pg.GetUser: %w", err)
+	}
+
+	return userNameEnriched, nil
 }

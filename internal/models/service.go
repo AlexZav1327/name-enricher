@@ -1,16 +1,12 @@
 package models
 
 type RequestEnrich struct {
-	Name       string `json:"name"`
-	Surname    string `json:"surname"`
-	Patronymic string `json:"patronymic"`
+	Name string `json:"name"`
 }
 
 type ResponseEnrich struct {
-	Name       string `json:"name"`
-	Surname    string `json:"surname"`
-	Patronymic string `json:"patronymic"`
-	Age        int    `json:"age"`
-	Gender     string `json:"gender"`
-	Country    string `json:"country"`
+	RequestEnrich
+	Age     int    `json:"age"`
+	Gender  string `json:"sex"`
+	Country string `json:"country"`
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,14 +16,12 @@ type Server struct {
 	port    int
 	server  *http.Server
 	handler *Handler
-	service EnrichService
+	service EnricherService
 	log     *logrus.Entry
 }
 
-func New(host string, port int, service EnrichService, log *logrus.Logger) *Server {
+func New(host string, port int, service EnricherService, log *logrus.Logger) *Server {
 	h := NewHandler(service, log)
-
-	http.HandleFunc("/enrich", h.enrich)
 
 	s := Server{
 		host:    host,
@@ -32,8 +31,17 @@ func New(host string, port int, service EnrichService, log *logrus.Logger) *Serv
 		log:     log.WithField("module", "http"),
 	}
 
+	r := chi.NewRouter()
+
+	r.Group(func(r chi.Router) {
+		r.Route("/api/v1", func(r chi.Router) {
+			r.Post("/user/enrich", h.enrich)
+		})
+	})
+
 	s.server = &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", host, port),
+		Handler:           r,
 		ReadHeaderTimeout: 30 * time.Second,
 	}
 

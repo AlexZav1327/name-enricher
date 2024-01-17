@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,8 +35,12 @@ func New(host string, port int, service EnricherService, log *logrus.Logger) *Se
 
 	r := chi.NewRouter()
 
+	r.Use(middleware.Recoverer)
+	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 	r.Group(func(r chi.Router) {
+		r.Use(h.metric)
 		r.Route("/api/v1", func(r chi.Router) {
+			r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: log, NoColor: true}))
 			r.Post("/user/enrich", h.enrich)
 			r.Get("/users", h.getList)
 			r.Patch("/user/update/{name}", h.update)
@@ -62,7 +68,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 		err := s.server.Shutdown(shutdownCtx)
 		if err != nil {
-			s.log.Warningf("server.Shutdown: %s", err)
+			s.log.Warningf("s.server.Shutdown(shutdownCtx): %s", err)
 		}
 	}()
 
@@ -70,7 +76,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 	err := s.server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("ListenAndServe: %w", err)
+		return fmt.Errorf("s.server.ListenAndServe(): %w", err)
 	}
 
 	return nil

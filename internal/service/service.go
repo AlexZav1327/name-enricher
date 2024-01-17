@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/AlexZav1327/name-enricher/internal/models"
 	"github.com/sirupsen/logrus"
@@ -16,6 +17,7 @@ type Service struct {
 	genderResolver  GenderResolver
 	countryResolver CountryResolver
 	log             *logrus.Entry
+	metrics         *metrics
 }
 
 func New(pg store, age AgeResolver, gender GenderResolver, country CountryResolver, log *logrus.Logger) *Service {
@@ -25,6 +27,7 @@ func New(pg store, age AgeResolver, gender GenderResolver, country CountryResolv
 		genderResolver:  gender,
 		countryResolver: country,
 		log:             log.WithField("module", "service"),
+		metrics:         newMetrics(),
 	}
 }
 
@@ -95,12 +98,17 @@ func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich)
 
 	err = eg.Wait()
 	if err != nil {
-		return models.ResponseEnrich{}, fmt.Errorf("eg.Wait: %w", err)
+		return models.ResponseEnrich{}, fmt.Errorf("eg.Wait(): %w", err)
 	}
+
+	started := time.Now()
+	defer func() {
+		s.metrics.duration.WithLabelValues("save_user").Observe(time.Since(started).Seconds())
+	}()
 
 	err = s.pg.SaveUser(ctx, userNameEnriched)
 	if err != nil {
-		return userNameEnriched, fmt.Errorf("pg.SaveUser: %w", err)
+		return userNameEnriched, fmt.Errorf("s.pg.SaveUser(ctx, userNameEnriched): %w", err)
 	}
 
 	return userNameEnriched, nil
@@ -134,6 +142,11 @@ func (s *Service) UpdateUser(ctx context.Context, user models.ResponseEnrich) (m
 		user.Country = currentUser.Country
 	}
 
+	started := time.Now()
+	defer func() {
+		s.metrics.duration.WithLabelValues("update_user").Observe(time.Since(started).Seconds())
+	}()
+
 	updatedUser, err := s.pg.UpdateUser(ctx, user)
 	if err != nil {
 		return models.ResponseEnrich{}, fmt.Errorf("s.pg.UpdateUser(ctx, user): %w", err)
@@ -143,6 +156,11 @@ func (s *Service) UpdateUser(ctx context.Context, user models.ResponseEnrich) (m
 }
 
 func (s *Service) DeleteUser(ctx context.Context, userName string) error {
+	started := time.Now()
+	defer func() {
+		s.metrics.duration.WithLabelValues("delete_user").Observe(time.Since(started).Seconds())
+	}()
+
 	err := s.pg.DeleteUser(ctx, userName)
 	if err != nil {
 		return fmt.Errorf("s.pg.DeleteUser(ctx, userName): %w", err)

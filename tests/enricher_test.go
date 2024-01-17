@@ -9,7 +9,7 @@ import (
 )
 
 func (s *IntegrationTestSuite) TestServiceCRUD() {
-	s.Run("enrich user name with details normal case", func() {
+	s.Run("enrich user with details normal case", func() {
 		ctx := context.Background()
 
 		req := models.RequestEnrich{
@@ -44,6 +44,17 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 
 		s.Require().Equal(respData.Country, respCountry.Country[0].CountryID)
 	})
+	s.Run("enrich user not valid name", func() {
+		ctx := context.Background()
+
+		req := models.RequestEnrich{
+			Name: "123xyz",
+		}
+
+		resp := s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, nil)
+
+		s.Require().Equal(http.StatusNotFound, resp.StatusCode)
+	})
 	s.Run("update user normal case", func() {
 		ctx := context.Background()
 
@@ -68,6 +79,19 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		s.Require().Equal(reqUpdate.Gender, respData.Gender)
 		s.Require().Equal(reqUpdate.Country, respData.Country)
 	})
+	s.Run("update non-existent user", func() {
+		ctx := context.Background()
+
+		req := models.ResponseEnrich{
+			RequestEnrich: models.RequestEnrich{Name: "Noname"},
+			Age:           150,
+		}
+
+		userNameEndpoint := req.Name
+		resp := s.sendRequest(ctx, http.MethodPatch, url+updateUserEndpoint+userNameEndpoint, req, nil)
+
+		s.Require().Equal(http.StatusNotFound, resp.StatusCode)
+	})
 	s.Run("delete user normal case", func() {
 		ctx := context.Background()
 
@@ -80,6 +104,18 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		resp := s.sendRequest(ctx, http.MethodDelete, url+deleteUserEndpoint+userNameEndpoint, nil, nil)
 
 		s.Require().Equal(http.StatusNoContent, resp.StatusCode)
+	})
+	s.Run("delete non-existent user", func() {
+		ctx := context.Background()
+
+		req := models.ResponseEnrich{
+			RequestEnrich: models.RequestEnrich{Name: "Noname"},
+		}
+
+		userNameEndpoint := req.Name
+		resp := s.sendRequest(ctx, http.MethodDelete, url+deleteUserEndpoint+userNameEndpoint, req, nil)
+
+		s.Require().Equal(http.StatusNotFound, resp.StatusCode)
 	})
 }
 

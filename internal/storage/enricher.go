@@ -40,7 +40,7 @@ var ErrUserNotFound = errors.New("no such user")
 func (p *Postgres) SaveUser(ctx context.Context, user models.ResponseEnrich) error {
 	_, err := p.db.Exec(ctx, saveUserQuery, user.Name, user.Age, user.Gender, user.Country)
 	if err != nil {
-		return fmt.Errorf("exec: %w", err)
+		return fmt.Errorf("p.db.Exec(ctx, saveUserQuery, user.Name, user.Age, user.Gender, user.Country): %w", err)
 	}
 
 	return nil
@@ -57,7 +57,7 @@ func (p *Postgres) GetUser(ctx context.Context, userName string) (models.Respons
 			return models.ResponseEnrich{}, ErrUserNotFound
 		}
 
-		return models.ResponseEnrich{}, fmt.Errorf("row.Scan: %w", err)
+		return models.ResponseEnrich{}, fmt.Errorf("row.Scan(&user.Name, &user.Age, &user.Gender, &user.Country): %w", err)
 	}
 
 	return user, nil

@@ -32,12 +32,12 @@ func main() {
 
 	pg, err := storage.ConnectDB(ctx, pgDSN, logger)
 	if err != nil {
-		logger.Panicf("ConnectDB: %s", err)
+		logger.Panicf("storage.ConnectDB(ctx, pgDSN, logger): %s", err)
 	}
 
 	err = pg.Migrate(migrate.Up)
 	if err != nil {
-		logger.Panicf("Migrate: %s", err)
+		logger.Panicf("pg.Migrate(migrate.Up): %s", err)
 	}
 
 	ageEnrich := age.New(logger)
@@ -48,7 +48,7 @@ func main() {
 
 	err = s.Run(ctx)
 	if err != nil {
-		logger.Panicf("Run: %s", err)
+		logger.Panicf("s.Run(ctx): %s", err)
 	}
 }
 

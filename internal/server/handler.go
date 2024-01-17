@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/AlexZav1327/name-enricher/internal/models"
+	"github.com/AlexZav1327/name-enricher/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 )
@@ -16,6 +18,7 @@ const defaultLimit = 20
 type Handler struct {
 	service EnricherService
 	log     *logrus.Entry
+	metrics *metrics
 }
 
 type EnricherService interface {
@@ -29,6 +32,7 @@ func NewHandler(service EnricherService, log *logrus.Logger) *Handler {
 	return &Handler{
 		service: service,
 		log:     log.WithField("module", "handler"),
+		metrics: newMetrics(),
 	}
 }
 
@@ -43,10 +47,14 @@ func (h *Handler) enrich(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userNameEnriched, err := h.service.EnrichUser(r.Context(), userName)
-	if err != nil {
+	if errors.Is(err, models.ErrNameNotValid) {
 		w.WriteHeader(http.StatusNotFound)
 
-		h.log.Infof("err: %s", err)
+		return
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -55,7 +63,7 @@ func (h *Handler) enrich(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(userNameEnriched)
 	if err != nil {
-		h.log.Warningf("json.NewEncoder.Encode: %s", err)
+		h.log.Warningf("json.NewEncoder(w).Encode(userNameEnriched): %s", err)
 	}
 }
 
@@ -76,8 +84,6 @@ func (h *Handler) getList(w http.ResponseWriter, r *http.Request) {
 	usersList, err := h.service.GetUsersList(r.Context(), params)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-
-		h.log.Warningf("err: %s", err)
 
 		return
 	}
@@ -103,8 +109,14 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	user.Name = chi.URLParam(r, "name")
 
 	updatedUser, err := h.service.UpdateUser(r.Context(), user)
-	if err != nil {
+	if errors.Is(err, storage.ErrUserNotFound) {
 		w.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -121,8 +133,14 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	userName := chi.URLParam(r, "name")
 
 	err := h.service.DeleteUser(r.Context(), userName)
-	if err != nil {
+	if errors.Is(err, storage.ErrUserNotFound) {
 		w.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}

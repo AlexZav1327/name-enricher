@@ -12,10 +12,9 @@ import (
 	"github.com/AlexZav1327/name-enricher/internal/age"
 	"github.com/AlexZav1327/name-enricher/internal/country"
 	"github.com/AlexZav1327/name-enricher/internal/gender"
-	"github.com/AlexZav1327/name-enricher/internal/storage"
-
 	"github.com/AlexZav1327/name-enricher/internal/server"
 	"github.com/AlexZav1327/name-enricher/internal/service"
+	"github.com/AlexZav1327/name-enricher/internal/storage"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	migrate "github.com/rubenv/sql-migrate"
 	"github.com/sirupsen/logrus"
@@ -27,8 +26,8 @@ const (
 	host               = ""
 	dsn                = "postgres://user:secret@localhost:5436/postgres?sslmode=disable"
 	enrichNameEndpoint = "/api/v1/user/enrich"
-	updateUserEndpoint = "/api/v1/user/update"
-	deleteUserEndpoint = "/api/v1/user/delete"
+	updateUserEndpoint = "/api/v1/user/update/"
+	deleteUserEndpoint = "/api/v1/user/delete/"
 	usersListEndpoint  = "/api/v1/users"
 )
 

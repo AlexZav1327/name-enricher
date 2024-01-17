@@ -48,7 +48,7 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		ctx := context.Background()
 
 		req := models.RequestEnrich{
-			Name: "Kate",
+			Name: "Lana",
 		}
 
 		var respData models.ResponseEnrich
@@ -56,15 +56,17 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		_ = s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, &respData)
 
 		reqUpdate := respData
-		reqUpdate.Name = "Catherine"
-		reqUpdate.Age = 31
+		reqUpdate.Age = 99
+		reqUpdate.Gender = "male"
+		reqUpdate.Country = "XY"
 
 		userNameEndpoint := req.Name
 		resp := s.sendRequest(ctx, http.MethodPatch, url+updateUserEndpoint+userNameEndpoint, reqUpdate, &respData)
 
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-		s.Require().Equal(reqUpdate.Name, respData.Name)
 		s.Require().Equal(reqUpdate.Age, respData.Age)
+		s.Require().Equal(reqUpdate.Gender, respData.Gender)
+		s.Require().Equal(reqUpdate.Country, respData.Country)
 	})
 	s.Run("delete user normal case", func() {
 		ctx := context.Background()
@@ -90,7 +92,7 @@ func (s *IntegrationTestSuite) TestUsersList() {
 		resp := s.sendRequest(ctx, http.MethodGet, url+usersListEndpoint, nil, &respData)
 
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-		s.Require().Equal([]models.ResponseEnrich{}, resp)
+		s.Require().Equal([]models.ResponseEnrich{}, respData)
 	})
 	s.Run("get users list normal case", func() {
 		ctx := context.Background()
@@ -124,7 +126,7 @@ func (s *IntegrationTestSuite) TestUsersList() {
 		resp = s.sendRequest(ctx, http.MethodGet, url+usersListEndpoint+queryParams, nil, &respData)
 
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
-		s.Require().Equal("Alex", respData[0].Name)
+		s.Require().Equal("Liza", respData[0].Name)
 
 		queryParams = "?itemsPerPage=2"
 		resp = s.sendRequest(ctx, http.MethodGet, url+usersListEndpoint+queryParams, nil, &respData)

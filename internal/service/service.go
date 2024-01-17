@@ -30,7 +30,10 @@ func New(pg store, age AgeResolver, gender GenderResolver, country CountryResolv
 
 type store interface {
 	GetUser(ctx context.Context, userName string) (models.ResponseEnrich, error)
+	GetUsersList(ctx context.Context, params models.ListingQueryParams) ([]models.ResponseEnrich, error)
 	SaveUser(ctx context.Context, user models.ResponseEnrich) error
+	UpdateUser(ctx context.Context, user models.ResponseEnrich) (models.ResponseEnrich, error)
+	DeleteUser(ctx context.Context, userName string) error
 }
 
 type AgeResolver interface {
@@ -45,8 +48,8 @@ type CountryResolver interface {
 	GetCountry(ctx context.Context, name string) (string, error)
 }
 
-func (s *Service) HandleUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
-	userNameEnriched, err := s.getUser(ctx, userName)
+func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
+	userNameEnriched, err := s.pg.GetUser(ctx, userName.Name)
 	if err == nil {
 		return userNameEnriched, nil
 	}
@@ -103,11 +106,47 @@ func (s *Service) HandleUser(ctx context.Context, userName models.RequestEnrich)
 	return userNameEnriched, nil
 }
 
-func (s *Service) getUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
-	userNameEnriched, err := s.pg.GetUser(ctx, userName.Name)
+func (s *Service) GetUsersList(ctx context.Context, params models.ListingQueryParams) ([]models.ResponseEnrich, error) {
+	usersList, err := s.pg.GetUsersList(ctx, params)
 	if err != nil {
-		return models.ResponseEnrich{}, fmt.Errorf("pg.GetUser: %w", err)
+		return nil, fmt.Errorf("s.pg.GetUsersList(ctx, params): %w", err)
 	}
 
-	return userNameEnriched, nil
+	return usersList, nil
+}
+
+func (s *Service) UpdateUser(ctx context.Context, user models.ResponseEnrich) (models.ResponseEnrich, error) {
+	currentUser, err := s.pg.GetUser(ctx, user.Name)
+	if err != nil {
+		return models.ResponseEnrich{}, fmt.Errorf("s.pg.GetUser(ctx, user.Name): %w", err)
+	}
+
+	switch {
+	case user.Age == 0:
+		user.Age = currentUser.Age
+
+		fallthrough
+	case user.Gender == "":
+		user.Gender = currentUser.Gender
+
+		fallthrough
+	case user.Country == "":
+		user.Country = currentUser.Country
+	}
+
+	updatedUser, err := s.pg.UpdateUser(ctx, user)
+	if err != nil {
+		return models.ResponseEnrich{}, fmt.Errorf("s.pg.UpdateUser(ctx, user): %w", err)
+	}
+
+	return updatedUser, nil
+}
+
+func (s *Service) DeleteUser(ctx context.Context, userName string) error {
+	err := s.pg.DeleteUser(ctx, userName)
+	if err != nil {
+		return fmt.Errorf("s.pg.DeleteUser(ctx, userName): %w", err)
+	}
+
+	return nil
 }

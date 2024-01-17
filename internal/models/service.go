@@ -7,6 +7,6 @@ type RequestEnrich struct {
 type ResponseEnrich struct {
 	RequestEnrich
 	Age     int    `json:"age"`
-	Gender  string `json:"sex"`
+	Gender  string `json:"gender"`
 	Country string `json:"country"`
 }

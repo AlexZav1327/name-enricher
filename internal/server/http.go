@@ -36,6 +36,9 @@ func New(host string, port int, service EnricherService, log *logrus.Logger) *Se
 	r.Group(func(r chi.Router) {
 		r.Route("/api/v1", func(r chi.Router) {
 			r.Post("/user/enrich", h.enrich)
+			r.Get("/users", h.getList)
+			r.Patch("/user/update/{name}", h.update)
+			r.Delete("/user/delete/{name}", h.delete)
 		})
 	})
 

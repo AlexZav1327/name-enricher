@@ -16,3 +16,11 @@ type CountryEnriched struct {
 type CountryEnrichedList struct {
 	Country []CountryEnriched `json:"country"`
 }
+
+type ListingQueryParams struct {
+	TextFilter   string
+	ItemsPerPage int
+	Offset       int
+	Sorting      string
+	Descending   bool
+}

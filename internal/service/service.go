@@ -45,7 +45,7 @@ type CountryResolver interface {
 	GetCountry(ctx context.Context, name string) (string, error)
 }
 
-func (s *Service) Handle(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
+func (s *Service) HandleUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
 	userNameEnriched, err := s.getUser(ctx, userName)
 	if err == nil {
 		return userNameEnriched, nil

@@ -15,7 +15,7 @@ type Handler struct {
 }
 
 type EnricherService interface {
-	Handle(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error)
+	HandleUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error)
 }
 
 func NewHandler(service EnricherService, log *logrus.Logger) *Handler {
@@ -35,7 +35,7 @@ func (h *Handler) enrich(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userNameEnriched, err := h.service.Handle(r.Context(), userName)
+	userNameEnriched, err := h.service.HandleUser(r.Context(), userName)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 

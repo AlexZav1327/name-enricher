@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  pg:
+    image: postgres:latest
+    container_name: enricher-service_postgres
+    environment:
+      POSTGRES_DB: postgres_enricher
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - '5436:5432'
+    command: ['postgres', '-c', 'log_statement=all']
+

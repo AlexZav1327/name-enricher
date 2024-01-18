@@ -1,15 +1,12 @@
 //nolint:wrapcheck
-//nolint:funlen
 package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/AlexZav1327/name-enricher/internal/models"
-	"github.com/AlexZav1327/name-enricher/internal/storage"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -56,11 +53,7 @@ type CountryResolver interface {
 
 func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich) (models.ResponseEnrich, error) {
 	userNameEnriched, err := s.pg.GetUser(ctx, userName.Name)
-	if !errors.Is(err, storage.ErrUserNotFound) {
-		return models.ResponseEnrich{}, fmt.Errorf("s.pg.GetUser(ctx, user.Name): %w", err)
-	}
-
-	if userNameEnriched.Name == userName.Name && userNameEnriched.Surname == userName.Surname &&
+	if err == nil && userNameEnriched.Name == userName.Name && userNameEnriched.Surname == userName.Surname &&
 		userNameEnriched.Patronymic == userName.Patronymic {
 		return userNameEnriched, nil
 	}
@@ -76,7 +69,6 @@ func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich)
 		if err != nil {
 			return err
 		}
-
 		userNameEnriched.Age = age
 
 		return nil
@@ -87,7 +79,6 @@ func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich)
 		if err != nil {
 			return err
 		}
-
 		userNameEnriched.Gender = gender
 
 		return nil
@@ -98,7 +89,6 @@ func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich)
 		if err != nil {
 			return err
 		}
-
 		userNameEnriched.Country = country
 
 		return nil
@@ -136,22 +126,26 @@ func (s *Service) UpdateUser(ctx context.Context, user models.ResponseEnrich) (m
 	if err != nil {
 		return models.ResponseEnrich{}, fmt.Errorf("s.pg.GetUser(ctx, user.Name): %w", err)
 	}
-	s.log.Warningln("currentUser: %v", currentUser)
-	s.log.Warningln("user: %v", user)
-	switch {
-	case user.Surname == "":
+
+	if user.Surname == "" {
 		user.Surname = currentUser.Surname
-	case user.Patronymic == "":
-		user.Patronymic = currentUser.Patronymic
-	case user.Age == 0:
-		user.Age = currentUser.Age
-	case user.Gender == "":
-		user.Gender = currentUser.Gender
-	case user.Country == "":
-		user.Country = currentUser.Country
 	}
 
-	s.log.Warning(user)
+	if user.Patronymic == "" {
+		user.Patronymic = currentUser.Patronymic
+	}
+
+	if user.Age == 0 {
+		user.Age = currentUser.Age
+	}
+
+	if user.Gender == "" {
+		user.Gender = currentUser.Gender
+	}
+
+	if user.Country == "" {
+		user.Country = currentUser.Country
+	}
 
 	started := time.Now()
 	defer func() {

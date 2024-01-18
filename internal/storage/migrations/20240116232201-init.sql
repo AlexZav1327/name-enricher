@@ -1,6 +1,6 @@
 -- +migrate Up
 CREATE TABLE enriched_user (
-    name VARCHAR NOT NULL PRIMARY KEY,
+    name VARCHAR NOT NULL,
     surname VARCHAR NOT NULL,
     patronymic VARCHAR,
     age INT NOT NULL,

@@ -26,7 +26,7 @@ func New(log *logrus.Logger) *Gender {
 func (g *Gender) GetGender(ctx context.Context, name string) (string, error) {
 	endpoint := fmt.Sprintf("https://api.genderize.io/?name=%s", name)
 
-	var respData models.GenderEnricher
+	var respData models.GenderEnriched
 
 	err := g.sendRequest(ctx, endpoint, &respData)
 	if err != nil {

@@ -26,14 +26,14 @@ func newMetrics() *metrics {
 				Namespace: "name_enricher_service",
 				Subsystem: "",
 				Name:      "users_added_total",
-				Help:      "total quantity of users have been added",
+				Help:      "total quantity of users that were added",
 			}),
 		deletedUsers: promauto.NewCounter(
 			prometheus.CounterOpts{
 				Namespace: "name_enricher_service",
 				Subsystem: "",
 				Name:      "users_deleted_total",
-				Help:      "total quantity of users have been deleted",
+				Help:      "total quantity of users that were deleted",
 			}),
 	}
 }

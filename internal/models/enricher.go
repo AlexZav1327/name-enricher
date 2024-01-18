@@ -4,7 +4,7 @@ type AgeEnriched struct {
 	Age int `json:"age"`
 }
 
-type GenderEnricher struct {
+type GenderEnriched struct {
 	Gender string `json:"gender"`
 }
 

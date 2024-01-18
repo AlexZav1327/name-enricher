@@ -1,7 +1,9 @@
 package models
 
 type RequestEnrich struct {
-	Name string `json:"name"`
+	Name       string `json:"name"`
+	Surname    string `json:"surname"`
+	Patronymic string `json:"patronymic"`
 }
 
 type ResponseEnrich struct {

@@ -11,36 +11,38 @@ import (
 
 const (
 	saveUserQuery = `
-	INSERT INTO enriched_user (name, age, gender, country)
-	VALUES ($1, $2, $3, $4);
+	INSERT INTO enriched_user (name, surname, patronymic, age, gender, country)
+	VALUES ($1, $2, $3, $4, $5, $6);
 	`
 	getUserQuery = `
-	SELECT name, age, gender, country
+	SELECT name, surname, patronymic, age, gender, country
 	FROM enriched_user
 	WHERE name = $1
 	`
 	updateUserQuery = `
 	UPDATE enriched_user
-	SET age = $2, gender = $3, country = $4
+	SET surname = $2, patronymic = $3, age = $4, gender = $5, country = $6
 	WHERE name = $1
-	RETURNING name, age, gender, country;
+	RETURNING name, surname, patronymic, age, gender, country;
 	`
 	deleteUserQuery = `
 	DELETE FROM enriched_user
 	WHERE name = $1;
 	`
-	name    = "name"
-	age     = "age"
-	gender  = "gender"
-	country = "country"
+	name       = "name"
+	surname    = "surname"
+	patronymic = "patronymic"
+	age        = "age"
+	gender     = "gender"
+	country    = "country"
 )
 
 var ErrUserNotFound = errors.New("no such user")
 
 func (p *Postgres) SaveUser(ctx context.Context, user models.ResponseEnrich) error {
-	_, err := p.db.Exec(ctx, saveUserQuery, user.Name, user.Age, user.Gender, user.Country)
+	_, err := p.db.Exec(ctx, saveUserQuery, user.Name, user.Surname, user.Patronymic, user.Age, user.Gender, user.Country)
 	if err != nil {
-		return fmt.Errorf("p.db.Exec(ctx, saveUserQuery, user.Name, user.Age, user.Gender, user.Country): %w", err)
+		return fmt.Errorf("p.db.Exec(ctx, saveUserQuery): %w", err)
 	}
 
 	return nil
@@ -51,13 +53,13 @@ func (p *Postgres) GetUser(ctx context.Context, userName string) (models.Respons
 
 	var user models.ResponseEnrich
 
-	err := row.Scan(&user.Name, &user.Age, &user.Gender, &user.Country)
+	err := row.Scan(&user.Name, &user.Surname, &user.Patronymic, &user.Age, &user.Gender, &user.Country)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.ResponseEnrich{}, ErrUserNotFound
 		}
 
-		return models.ResponseEnrich{}, fmt.Errorf("row.Scan(&user.Name, &user.Age, &user.Gender, &user.Country): %w", err)
+		return models.ResponseEnrich{}, fmt.Errorf("row.Scan: %w", err)
 	}
 
 	return user, nil
@@ -67,16 +69,18 @@ func (p *Postgres) GetUsersList(ctx context.Context, params models.ListingQueryP
 	[]models.ResponseEnrich, error,
 ) {
 	tableColumnsList := map[string]string{
-		name:    name,
-		age:     age,
-		gender:  gender,
-		country: country,
+		name:       name,
+		surname:    surname,
+		patronymic: patronymic,
+		age:        age,
+		gender:     gender,
+		country:    country,
 	}
 
 	var args []interface{}
 
 	query := `
-	SELECT name, age, gender, country
+	SELECT name, surname, patronymic, age, gender, country
 	FROM enriched_user
 	WHERE TRUE
 	`
@@ -95,9 +99,9 @@ func (p *Postgres) GetUsersList(ctx context.Context, params models.ListingQueryP
 	for rows.Next() {
 		var user models.ResponseEnrich
 
-		err = rows.Scan(&user.Name, &user.Age, &user.Gender, &user.Country)
+		err = rows.Scan(&user.Name, &user.Surname, &user.Patronymic, &user.Age, &user.Gender, &user.Country)
 		if err != nil {
-			return nil, fmt.Errorf("rows.Scan(&user.Name, &user.Age, &user.Gender, &user.Country): %w", err)
+			return nil, fmt.Errorf("rows.Scan: %w", err)
 		}
 
 		usersList = append(usersList, user)
@@ -112,18 +116,33 @@ func (p *Postgres) GetUsersList(ctx context.Context, params models.ListingQueryP
 }
 
 func (p *Postgres) UpdateUser(ctx context.Context, user models.ResponseEnrich) (models.ResponseEnrich, error) {
-	row := p.db.QueryRow(ctx, updateUserQuery, user.Name, user.Age, user.Gender, user.Country)
+	row := p.db.QueryRow(
+		ctx,
+		updateUserQuery,
+		user.Name,
+		user.Surname,
+		user.Patronymic,
+		user.Age,
+		user.Gender,
+		user.Country,
+	)
 
 	var updatedUser models.ResponseEnrich
 
-	err := row.Scan(&updatedUser.Name, &updatedUser.Age, &updatedUser.Gender, &updatedUser.Country)
+	err := row.Scan(
+		&updatedUser.Name,
+		&updatedUser.Surname,
+		&updatedUser.Patronymic,
+		&updatedUser.Age,
+		&updatedUser.Gender,
+		&updatedUser.Country,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.ResponseEnrich{}, ErrUserNotFound
 		}
 
-		return models.ResponseEnrich{}, fmt.Errorf(
-			"row.Scan(&updatedUser.Name, &updatedUser.Age, &updatedUser.Gender, &updatedUser.Country): %w", err)
+		return models.ResponseEnrich{}, fmt.Errorf("row.Scan: %w", err)
 	}
 
 	return updatedUser, nil
@@ -147,8 +166,9 @@ func (*Postgres) buildQueryAndArgs(tableColumnsList map[string]string, args []in
 ) (string, []interface{}) {
 	if params.TextFilter != "" {
 		args = append(args, "%"+params.TextFilter+"%")
-		query += fmt.Sprintf(` AND (name ILIKE $%d OR gender ILIKE $%d OR country ILIKE $%d)`, len(args),
-			len(args), len(args))
+		query += fmt.Sprintf(` AND (
+			name ILIKE $%d OR surname ILIKE $%d OR patronymic ILIKE $%d OR gender ILIKE $%d OR country ILIKE $%d
+			)`, len(args), len(args), len(args), len(args), len(args))
 	}
 
 	order := ` ORDER BY name`

@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Name enricher service
+  description: Service predicts the age, gender and nationality of the person from their first name.
+  contact:
+    email: alexey.zarapin@gmail.com
+  version: 0.0.1
+servers:
+  - url: http://localhost:8086/api/v1
+paths:
+  /user/enrich:
+    post:
+      summary: Enrich user name with details
+      description: Returns the enriched name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqEnrich'
+      responses:
+        '200':
+          description: A RespEnriched object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEnrich'
+        '400':
+          description: Bad request; name must be string
+        '404':
+          description: The name is not valid
+        '5XX':
+          description: Unexpected error
+
+  /users:
+    get:
+      summary: Find users by filters
+      description: Returns list of users
+      parameters:
+        - name: textFilter
+          in: query
+          description: Returns users that contain the characters specified in the text filter
+          required: false
+          schema:
+            type: string
+        - name: itemsPerPage
+          in: query
+          description: How many users can be contained in the response
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 20
+        - name: offset
+          in: query
+          description: Excludes from a response the first N users
+          required: false
+          schema:
+            type: number
+            format: int64
+        - name: sorting
+          in: query
+          description: Sorts users by the specified parameter
+          required: false
+          schema:
+            type: string
+        - name: descending
+          in: query
+          description: Sorts wallets in the descending order
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: A UsersList array
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersList'
+        '5XX':
+          description: Unexpected error
+  /user/update/{name}:
+    patch:
+      summary: Update user data
+      description: Returns updated user
+      parameters:
+        - name: name
+          in: path
+          description: User name to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespEnrich'
+      responses:
+        '200':
+          description: A RespEnriched object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEnrich'
+        '400':
+          description: Bad request; age must be int, gender and country must be string
+        '404':
+          description: The name was not found
+        '5XX':
+          description: Unexpected error
+  /user/delete/{name}:
+    delete:
+      summary: Delete user by name
+      description: Deletes user
+      parameters:
+        - name: name
+          in: path
+          description: User name to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No content
+        '404':
+          description: The name was not found
+        '5XX':
+          description: Unexpected error
+components:
+  schemas:
+    ReqEnrich:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Catherine
+    RespEnrich:
+      type: object
+      properties:
+        ReqEnrich:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Elizabeth
+            surname:
+              type: string
+              example: Duchess
+            patronymic:
+              type: string
+              example: Devonshire
+        age:
+          type: number
+          format: int
+          example: 20
+        gender:
+          type: string
+          example: female
+        country:
+          type: string
+          example: UK
+    UsersList:
+      type: array
+      items:
+        $ref: '#/components/schemas/RespEnrich'

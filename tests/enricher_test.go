@@ -13,7 +13,9 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		ctx := context.Background()
 
 		req := models.RequestEnrich{
-			Name: "Liza",
+			Name:       "Liza",
+			Surname:    "Duchess",
+			Patronymic: "Devonshire",
 		}
 
 		var respData models.ResponseEnrich
@@ -22,6 +24,8 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 		s.Require().Equal(req.Name, respData.Name)
+		s.Require().Equal(req.Surname, respData.Surname)
+		s.Require().Equal(req.Patronymic, respData.Patronymic)
 
 		var respAge models.AgeEnriched
 
@@ -30,7 +34,7 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 
 		s.Require().Equal(respData.Age, respAge.Age)
 
-		var respGender models.GenderEnricher
+		var respGender models.GenderEnriched
 
 		endpoint = fmt.Sprintf("https://api.genderize.io/?name=%s", req.Name)
 		_ = s.sendRequest(ctx, http.MethodGet, endpoint, nil, &respGender)
@@ -59,7 +63,9 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		ctx := context.Background()
 
 		req := models.RequestEnrich{
-			Name: "Lana",
+			Name:       "Liza",
+			Surname:    "Duchess",
+			Patronymic: "Devonshire",
 		}
 
 		var respData models.ResponseEnrich
@@ -67,16 +73,14 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		_ = s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, &respData)
 
 		reqUpdate := respData
-		reqUpdate.Age = 99
-		reqUpdate.Gender = "male"
-		reqUpdate.Country = "XY"
+		reqUpdate.Age = 13
+		reqUpdate.Country = "UK"
 
 		userNameEndpoint := req.Name
 		resp := s.sendRequest(ctx, http.MethodPatch, url+updateUserEndpoint+userNameEndpoint, reqUpdate, &respData)
 
 		s.Require().Equal(http.StatusOK, resp.StatusCode)
 		s.Require().Equal(reqUpdate.Age, respData.Age)
-		s.Require().Equal(reqUpdate.Gender, respData.Gender)
 		s.Require().Equal(reqUpdate.Country, respData.Country)
 	})
 	s.Run("update non-existent user", func() {
@@ -96,7 +100,8 @@ func (s *IntegrationTestSuite) TestServiceCRUD() {
 		ctx := context.Background()
 
 		req := models.RequestEnrich{
-			Name: "Alex",
+			Name:    "Alex",
+			Surname: "Zav",
 		}
 		_ = s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, nil)
 
@@ -134,14 +139,17 @@ func (s *IntegrationTestSuite) TestUsersList() {
 		ctx := context.Background()
 
 		req := models.RequestEnrich{
-			Name: "Alex",
+			Name:    "Alex",
+			Surname: "Zav",
 		}
 		_ = s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, nil)
 
 		req.Name = "Kate"
+		req.Surname = "Mir"
 		_ = s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, nil)
 
 		req.Name = "Liza"
+		req.Surname = "Duchess"
 		_ = s.sendRequest(ctx, http.MethodPost, url+enrichNameEndpoint, req, nil)
 
 		var respData []models.ResponseEnrich

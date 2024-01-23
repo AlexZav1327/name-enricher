@@ -26,8 +26,7 @@ func ConnectDB(ctx context.Context, dsn string, log *logrus.Logger) (*Postgres, 
 		return nil, fmt.Errorf("pgx.Connect(ctx, dsn): %w", err)
 	}
 
-	err = db.Ping(ctx)
-	if err != nil {
+	if err = db.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("db.Ping(ctx): %w", err)
 	}
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -15,15 +14,26 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	migrate "github.com/rubenv/sql-migrate"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	host = ""
-	port = 8086
+	"github.com/spf13/viper"
 )
 
 func main() {
-	pgDSN := getEnv(os.Getenv("PG_DSN"), "postgres://user:secret@localhost:5436/postgres?sslmode=disable")
+	viper.SetConfigName("config")
+	viper.AddConfigPath("./config")
+
+	if err := viper.BindEnv("database.dsn", "PG_DSN"); err != nil {
+		logrus.Warningf("viper.BindEnv(): %s", err)
+	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		logrus.Panicf("viper.ReadInConfig(): %s", err)
+	}
+
+	var (
+		pgDSN = viper.GetString("database.dsn")
+		host  = viper.GetString("server.host")
+		port  = viper.GetInt("server.port")
+	)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
@@ -35,8 +45,7 @@ func main() {
 		logger.Panicf("storage.ConnectDB(ctx, pgDSN, logger): %s", err)
 	}
 
-	err = pg.Migrate(migrate.Up)
-	if err != nil {
+	if err = pg.Migrate(migrate.Up); err != nil {
 		logger.Panicf("pg.Migrate(migrate.Up): %s", err)
 	}
 
@@ -46,17 +55,7 @@ func main() {
 	enricherService := service.New(pg, ageEnrich, genderEnrich, countryEnrich, logger)
 	s := server.New(host, port, enricherService, logger)
 
-	err = s.Run(ctx)
-	if err != nil {
+	if err = s.Run(ctx); err != nil {
 		logger.Panicf("s.Run(ctx): %s", err)
 	}
-}
-
-func getEnv(env, defaultValue string) string {
-	value := os.Getenv(env)
-	if value == "" {
-		return defaultValue
-	}
-
-	return value
 }

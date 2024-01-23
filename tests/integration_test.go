@@ -24,7 +24,7 @@ import (
 const (
 	port               = 5005
 	host               = ""
-	dsn                = "postgres://user:secret@localhost:5436/postgres?sslmode=disable"
+	dsn                = "postgres://user:secret@localhost:5432/postgres?sslmode=disable"
 	enrichNameEndpoint = "/api/v1/user/enrich"
 	updateUserEndpoint = "/api/v1/user/update/"
 	deleteUserEndpoint = "/api/v1/user/delete/"

@@ -23,3 +23,12 @@ func (h *Handler) metric(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(fn)
 }
+
+func (*Handler) commonMiddleware(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(fn)
+}

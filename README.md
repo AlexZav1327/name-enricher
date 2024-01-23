@@ -13,7 +13,7 @@ The service uses a PostgreSQL database for saving enriched user details and also
 - dockerfile
 - swagger
 - logging
-- tests (coverage 83.6%)
+- tests (coverage 80%)
 - metrics
 
 ## Quick start
@@ -37,13 +37,18 @@ $ make run
 # App, database and migration
 $ make test
 ```
+#### Linters:
+```shell
+# Run linters
+$ make lint
+```
 ## API methods description
 ### Enrich name
 ```shell
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"name": "Liza", "surname": "Duchess", "patronymic": "Devonshire"}' \
-  'http://localhost:8086/api/v1/user/enrich'
+  'http://localhost:8082/api/v1/user/enrich'
 ```
 #### Response
 ```json
@@ -79,5 +84,5 @@ curl -X PATCH \
 ### Delete wallet
 ```shell
 curl -X DELETE \
-'http://localhost:8080/api/v1/user/delete/Katharine'
+'http://localhost:8082/api/v1/user/delete/Katharine'
 ```

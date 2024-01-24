@@ -9,6 +9,6 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: secret
     ports:
-      - '5436:5432'
+      - '5432:5432'
     command: ['postgres', '-c', 'log_statement=all']
 

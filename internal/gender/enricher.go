@@ -28,8 +28,7 @@ func (g *Gender) GetGender(ctx context.Context, name string) (string, error) {
 
 	var respData models.GenderEnriched
 
-	err := g.sendRequest(ctx, endpoint, &respData)
-	if err != nil {
+	if err := g.sendRequest(ctx, endpoint, &respData); err != nil {
 		return "", fmt.Errorf("g.sendRequest(ctx, endpoint, &respData): %w", err)
 	}
 
@@ -63,8 +62,7 @@ func (g *Gender) sendRequest(ctx context.Context, endpoint string, respData inte
 		}
 	}()
 
-	err = json.NewDecoder(response.Body).Decode(&respData)
-	if err != nil {
+	if err = json.NewDecoder(response.Body).Decode(&respData); err != nil {
 		return fmt.Errorf("json.NewDecoder(response.Body).Decode(&respData): %w", err)
 	}
 

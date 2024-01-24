@@ -41,6 +41,7 @@ func New(host string, port int, service EnricherService, log *logrus.Logger) *Se
 		r.Use(h.metric)
 		r.Route("/api/v1", func(r chi.Router) {
 			r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: log, NoColor: true}))
+			r.Use(h.commonMiddleware)
 			r.Post("/user/enrich", h.enrich)
 			r.Get("/users", h.getList)
 			r.Patch("/user/update/{name}", h.update)
@@ -66,16 +67,14 @@ func (s *Server) Run(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 
-		err := s.server.Shutdown(shutdownCtx)
-		if err != nil {
+		if err := s.server.Shutdown(shutdownCtx); err != nil {
 			s.log.Warningf("s.server.Shutdown(shutdownCtx): %s", err)
 		}
 	}()
 
 	s.log.Infof("Server is running at port %d", s.port)
 
-	err := s.server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("s.server.ListenAndServe(): %w", err)
 	}
 

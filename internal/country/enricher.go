@@ -28,8 +28,7 @@ func (c *Country) GetCountry(ctx context.Context, name string) (string, error) {
 
 	var respData models.CountryEnrichedList
 
-	err := c.sendRequest(ctx, endpoint, &respData)
-	if err != nil {
+	if err := c.sendRequest(ctx, endpoint, &respData); err != nil {
 		return "", fmt.Errorf("c.sendRequest(ctx, endpoint, &respData): %w", err)
 	}
 
@@ -63,8 +62,7 @@ func (c *Country) sendRequest(ctx context.Context, endpoint string, respData int
 		}
 	}()
 
-	err = json.NewDecoder(response.Body).Decode(&respData)
-	if err != nil {
+	if err = json.NewDecoder(response.Body).Decode(&respData); err != nil {
 		return fmt.Errorf("json.NewDecoder(response.Body).Decode(&respData): %w", err)
 	}
 

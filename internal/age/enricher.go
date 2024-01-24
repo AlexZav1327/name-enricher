@@ -28,8 +28,7 @@ func (a *Age) GetAge(ctx context.Context, name string) (int, error) {
 
 	var respData models.AgeEnriched
 
-	err := a.sendRequest(ctx, endpoint, &respData)
-	if err != nil {
+	if err := a.sendRequest(ctx, endpoint, &respData); err != nil {
 		return 0, fmt.Errorf("a.sendRequest(ctx, endpoint, &respData): %w", err)
 	}
 
@@ -63,8 +62,7 @@ func (a *Age) sendRequest(ctx context.Context, endpoint string, respData interfa
 		}
 	}()
 
-	err = json.NewDecoder(response.Body).Decode(&respData)
-	if err != nil {
+	if err = json.NewDecoder(response.Body).Decode(&respData); err != nil {
 		return fmt.Errorf("json.NewDecoder(response.Body).Decode(&respData): %w", err)
 	}
 

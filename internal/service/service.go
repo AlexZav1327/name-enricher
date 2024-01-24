@@ -94,8 +94,7 @@ func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich)
 		return nil
 	})
 
-	err = eg.Wait()
-	if err != nil {
+	if err = eg.Wait(); err != nil {
 		return models.ResponseEnrich{}, fmt.Errorf("eg.Wait(): %w", err)
 	}
 
@@ -104,8 +103,7 @@ func (s *Service) EnrichUser(ctx context.Context, userName models.RequestEnrich)
 		s.metrics.duration.WithLabelValues("save_user").Observe(time.Since(started).Seconds())
 	}()
 
-	err = s.pg.SaveUser(ctx, userNameEnriched)
-	if err != nil {
+	if err = s.pg.SaveUser(ctx, userNameEnriched); err != nil {
 		return userNameEnriched, fmt.Errorf("s.pg.SaveUser(ctx, userNameEnriched): %w", err)
 	}
 
@@ -166,8 +164,7 @@ func (s *Service) DeleteUser(ctx context.Context, userName string) error {
 		s.metrics.duration.WithLabelValues("delete_user").Observe(time.Since(started).Seconds())
 	}()
 
-	err := s.pg.DeleteUser(ctx, userName)
-	if err != nil {
+	if err := s.pg.DeleteUser(ctx, userName); err != nil {
 		return fmt.Errorf("s.pg.DeleteUser(ctx, userName): %w", err)
 	}
 

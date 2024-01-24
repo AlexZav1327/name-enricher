@@ -39,8 +39,7 @@ func NewHandler(service EnricherService, log *logrus.Logger) *Handler {
 func (h *Handler) enrich(w http.ResponseWriter, r *http.Request) {
 	var userName models.RequestEnrich
 
-	err := json.NewDecoder(r.Body).Decode(&userName)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&userName); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -59,10 +58,10 @@ func (h *Handler) enrich(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(userNameEnriched)
-	if err != nil {
+	if err = json.NewEncoder(w).Encode(userNameEnriched); err != nil {
 		h.log.Warningf("json.NewEncoder(w).Encode(userNameEnriched): %s", err)
 	}
 }
@@ -90,8 +89,7 @@ func (h *Handler) getList(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(usersList)
-	if err != nil {
+	if err = json.NewEncoder(w).Encode(usersList); err != nil {
 		h.log.Warningf("json.NewEncoder(w).Encode(usersList): %s", err)
 	}
 }
@@ -99,8 +97,7 @@ func (h *Handler) getList(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	var user models.ResponseEnrich
 
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -123,8 +120,7 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(updatedUser)
-	if err != nil {
+	if err = json.NewEncoder(w).Encode(updatedUser); err != nil {
 		h.log.Warningf("json.NewEncoder(w).Encode(updatedUser): %s", err)
 	}
 }

@@ -107,8 +107,7 @@ func (p *Postgres) GetUsersList(ctx context.Context, params models.ListingQueryP
 		usersList = append(usersList, user)
 	}
 
-	err = rows.Err()
-	if err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows.Err(): %w", err)
 	}
 
